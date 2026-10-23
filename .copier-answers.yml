@@ -1,0 +1,15 @@
+_commit: v0.3.0
+_src_path: https://github.com/hasansezertasan/copier-infra
+apex_domain: hasansezertasan.com
+backend: object-storage
+cloudflare_account_id: d8a72309e747515805b614574ea7f323
+cloudflare_zone_id: 94004cdc8f054251dc4543a35175ee4a
+github_org: hasansezertasan
+managed_repos:
+- hasansezertasan/infra
+state_backend: s3
+state_bucket: hasansezertasan-infra-state
+state_endpoint: https://d8a72309e747515805b614574ea7f323.r2.cloudflarestorage.com
+state_lock_table: ''
+state_prefix: terraform/state
+state_region: auto

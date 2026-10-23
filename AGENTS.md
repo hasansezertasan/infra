@@ -1,0 +1,47 @@
+# Agent instructions
+
+This repository is the consuming infrastructure repository for `infra-skills`.
+
+## Workflow
+
+- Use infra-skills for setup, import, provider/resource additions, and status checks
+  (`infra-setup`, `infra-import`, `infra-add`, `infra-status`).
+- Read the Config block in `README.md` before acting. It is rendered by copier from
+  `.copier-answers.yml`, which also writes the state backend into both Terraform
+  roots' `backend.tf`. Change those values with `uvx copier update` (review the diff),
+  never by hand, and never `uvx copier recopy` over local edits. Commit the answers file,
+  config, and Terraform roots together. Changing any answer that sets the
+  state object's coordinates (`backend`, `hcp_org`, `state_backend`, `state_endpoint`, `state_bucket`,
+  `state_prefix`, `azure_storage_account`) is a state migration; follow infra-skills'
+  runbook. Routing and locking answers (`state_lock_table`, `state_region`,
+  `azure_resource_group`) configure access to the same object and are not migrations,
+  except `state_region` on `gcs`: it is the bucket's location, which cannot change after
+  creation, so changing it is a state migration.
+- Edit the Config block only between its `infra:customization` comments.
+- Record durable architecture, authentication, state, and safety choices in the
+  Decisions table in `README.md`.
+- Keep Cloudflare and GitHub in separate Terraform roots with separate state prefixes.
+- Run `mise exec -- make check` before proposing a change.
+
+## Safety
+
+- Never read, print, request, or commit plaintext credentials.
+- Keep read-only credentials in GitHub Actions repository secrets and apply credentials
+  only in the `main`-only `production` environment; never put apply credentials in
+  repository or organization secrets.
+- Never apply when a plan proposes creating a resource that already exists; import it.
+- Never apply without review. Applies run only from `main` in the `production`
+  environment, with required reviewers where GitHub offers them.
+- Treat forked pull-request Terraform as untrusted code. Fork pull requests must not
+  receive credentials; plan output appears in PR comments, so mark sensitive outputs
+  `sensitive = true`.
+
+## Terraform conventions
+
+- Each `terraform/*` directory is an independent root with its own lock file and state.
+- Pin Terraform in `mise.toml`, require that exact version in each root, and configure
+  every CI job to use the same version.
+- Commit `.terraform.lock.hcl` files. Upgrade providers deliberately.
+- Prefer clear resource-category files over a growing `main.tf`.
+- Extract a module only after repeated use reveals a stable abstraction.
+- Use declarative `import` blocks for existing resources.
