@@ -82,6 +82,7 @@ silently replacing their history, and never add tokens, private keys, or credent
 | Secret storage | GitHub Actions secrets; apply credentials only in the `production` environment | locked | Keeps write access to `main`-only jobs |
 | Apply policy | `production` environment on `main` with required reviewers | locked | Preserves a human review gate for infrastructure changes |
 | State history | no-versioning | locked | Cloudflare R2 does not implement bucket versioning, so a bad apply cannot be rolled back from the bucket; accepted because this state holds only Cloudflare and GitHub resources |
+| Destructive apply | allow-destroy | locked | Deletes and replacements require the allow-destroy label on the PR that produced the merged change. It is an intent marker, not authorization: anyone with write access can add it, and it opts into every delete in the refreshed apply plan, including drift |
 
 <!-- infra:decisions end -->
 
