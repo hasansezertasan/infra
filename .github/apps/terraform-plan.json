@@ -1,0 +1,18 @@
+{
+  "name": "hasansezertasan-terraform-plan",
+  "url": "https://github.com/hasansezertasan/infra",
+  "redirect_url": "http://localhost:3000/github-app/callback",
+  "public": false,
+  "hook_attributes": {
+    "url": "https://github.com/hasansezertasan/infra",
+    "active": false
+  },
+  "default_permissions": {
+    "administration": "read",
+    "actions": "read",
+    "contents": "read",
+    "metadata": "read",
+    "pull_requests": "read"
+  },
+  "default_events": []
+}
