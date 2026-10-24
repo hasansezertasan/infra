@@ -1,0 +1,259 @@
+# Terraform Apply workflow for object-storage backend mode
+# Copy to .github/workflows/terraform-apply.yml and customize for your setup
+#
+# Copy terraform-destroy.cjs to .github/scripts/terraform-destroy.cjs too.
+# Each apply computes a fresh saved plan, inspects it, then applies that exact plan.
+# Never reuse a branch's saved plan: it is unlocked, may skip refresh, and embeds read credentials.
+# Production planning uses write credentials, explicit refresh, and state locking.
+# The environment gate still precedes planning; drift may differ from the PR plan.
+# Deletes/replacements require allow-destroy on the producing merged PR. The label
+# records intent, not authorization, and opts into all deletes in the refreshed plan.
+# Apply every leaf on each push, so superseded or failed runs are caught up.
+# To retry, dispatch this workflow on main; stale re-runs are refused.
+name: Terraform Apply
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: terraform-apply-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  TF_IN_AUTOMATION: true
+  TF_INPUT: false
+  CLOUDFLARE_BACKEND: object-storage
+  GITHUB_BACKEND: object-storage
+
+jobs:
+  # Route by backend only: every object-storage leaf converges on every run.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      cloudflare: ${{ steps.route.outputs.cloudflare }}
+      github: ${{ steps.route.outputs.github }}
+    steps:
+      - name: Route object-storage leaves
+        id: route
+        env:
+          CLOUDFLARE_CHANGED: 'true'
+          GITHUB_CHANGED: 'true'
+        run: |
+          cloudflare=false
+          github=false
+          if [ "$CLOUDFLARE_BACKEND" = "object-storage" ] && [ "$CLOUDFLARE_CHANGED" = "true" ]; then
+            cloudflare=true
+          fi
+          if [ "$GITHUB_BACKEND" = "object-storage" ] && [ "$GITHUB_CHANGED" = "true" ]; then
+            github=true
+          fi
+          echo "cloudflare=$cloudflare" >> "$GITHUB_OUTPUT"
+          echo "github=$github" >> "$GITHUB_OUTPUT"
+
+  apply-cloudflare:
+    needs: changes
+    if: needs.changes.outputs.cloudflare == 'true'
+    permissions:
+      contents: read
+      pull-requests: read
+      id-token: write
+    runs-on: ubuntu-latest
+    environment: production
+    # Increase for leaves with long provider operations (for example Cloud SQL/GKE).
+    timeout-minutes: 120
+    # S3-compatible state (R2, MinIO) has no OIDC: the backend reads these static keys.
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4
+
+      # Authenticate to cloud provider for state access
+      # Uncomment and configure for your backend:
+      #
+      # GCS:
+      # - uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2
+      #   with:
+      #     workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      #     service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      #
+      # S3:
+      # - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
+      #   with:
+      #     role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+      #     aws-region: us-east-1
+      #
+      # Azure:
+      # - uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6 # v2
+      #   with:
+      #     client-id: ${{ secrets.AZURE_CLIENT_ID }}
+      #     tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+      #     subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Terraform Init
+        working-directory: terraform/cloudflare
+        run: terraform init
+
+      - name: Refuse empty state
+        working-directory: terraform/cloudflare
+        env:
+          # Set this production environment variable to true only for a new leaf's first apply.
+          ALLOW_EMPTY_STATE: ${{ vars.TF_ALLOW_EMPTY_STATE_CLOUDFLARE }}
+        run: |
+          # First creation may have no state file at all (notably on S3).
+          if [ "$ALLOW_EMPTY_STATE" = "true" ]; then
+            echo "::notice::state guard bypassed for explicitly authorized first creation"
+          else
+            state=$(terraform state list) || { echo "::error::cannot read state; refusing to apply"; exit 1; }
+            if [ -z "$state" ]; then
+              echo "::error::empty state; refusing to apply"
+              exit 1
+            fi
+          fi
+
+      - name: Terraform Plan
+        working-directory: terraform/cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: terraform plan -lock=true -refresh=true -no-color -out=tfplan
+
+      - name: Refuse destructive apply without opt-in
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          script: |
+            const { enforce } = require('./.github/scripts/terraform-destroy.cjs');
+            await enforce({ github, context, core, leaf: 'cloudflare' });
+
+      - name: Refuse to apply a commit that is not main's tip
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tip=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)
+          if [ "$GITHUB_REF" != "refs/heads/main" ] || [ "$tip" != "$GITHUB_SHA" ]; then
+            echo "::error::This run is for $GITHUB_REF at $GITHUB_SHA but main is at $tip. Run the workflow on main instead."
+            exit 1
+          fi
+
+      - name: Terraform Apply
+        working-directory: terraform/cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: terraform apply -lock=true -no-color tfplan
+
+  apply-github:
+    needs: changes
+    if: needs.changes.outputs.github == 'true'
+    permissions:
+      contents: read
+      pull-requests: read
+      id-token: write
+    runs-on: ubuntu-latest
+    environment: production
+    # Increase for leaves with long provider operations (for example Cloud SQL/GKE).
+    timeout-minutes: 120
+    # S3-compatible state (R2, MinIO) has no OIDC: the backend reads these static keys.
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4
+
+      # Authenticate to cloud provider for state access
+      # IMPORTANT: Auth is job-scoped - each job needs its own auth step
+      # Uncomment and configure for your backend:
+      #
+      # GCS:
+      # - uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2
+      #   with:
+      #     workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      #     service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      #
+      # S3:
+      # - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
+      #   with:
+      #     role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+      #     aws-region: us-east-1
+      #
+      # Azure:
+      # - uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6 # v2
+      #   with:
+      #     client-id: ${{ secrets.AZURE_CLIENT_ID }}
+      #     tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+      #     subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Terraform Init
+        working-directory: terraform/github
+        run: terraform init
+
+      - name: Refuse empty state
+        working-directory: terraform/github
+        env:
+          # Set this production environment variable to true only for a new leaf's first apply.
+          ALLOW_EMPTY_STATE: ${{ vars.TF_ALLOW_EMPTY_STATE_GITHUB }}
+        run: |
+          # First creation may have no state file at all (notably on S3).
+          if [ "$ALLOW_EMPTY_STATE" = "true" ]; then
+            echo "::notice::state guard bypassed for explicitly authorized first creation"
+          else
+            state=$(terraform state list) || { echo "::error::cannot read state; refusing to apply"; exit 1; }
+            if [ -z "$state" ]; then
+              echo "::error::empty state; refusing to apply"
+              exit 1
+            fi
+          fi
+
+      - name: Terraform Plan
+        working-directory: terraform/github
+        env:
+          GITHUB_APP_ID: ${{ secrets.GH_APP_ID }}
+          GITHUB_APP_INSTALLATION_ID: ${{ secrets.GH_APP_INSTALLATION_ID }}
+          GITHUB_APP_PEM_FILE: ${{ secrets.GH_APP_PEM }}
+          TF_VAR_github_app_id: ${{ secrets.GH_APP_ID }}
+          TF_VAR_github_app_installation_id: ${{ secrets.GH_APP_INSTALLATION_ID }}
+          TF_VAR_github_app_pem: ${{ secrets.GH_APP_PEM }}
+          TF_VAR_github_owner: ${{ vars.TF_GITHUB_OWNER || github.repository_owner }}
+        run: terraform plan -lock=true -refresh=true -no-color -out=tfplan
+
+      - name: Refuse destructive apply without opt-in
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          script: |
+            const { enforce } = require('./.github/scripts/terraform-destroy.cjs');
+            await enforce({ github, context, core, leaf: 'github' });
+
+      - name: Refuse to apply a commit that is not main's tip
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tip=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)
+          if [ "$GITHUB_REF" != "refs/heads/main" ] || [ "$tip" != "$GITHUB_SHA" ]; then
+            echo "::error::This run is for $GITHUB_REF at $GITHUB_SHA but main is at $tip. Run the workflow on main instead."
+            exit 1
+          fi
+
+      - name: Terraform Apply
+        working-directory: terraform/github
+        env:
+          GITHUB_APP_ID: ${{ secrets.GH_APP_ID }}
+          GITHUB_APP_INSTALLATION_ID: ${{ secrets.GH_APP_INSTALLATION_ID }}
+          GITHUB_APP_PEM_FILE: ${{ secrets.GH_APP_PEM }}
+          TF_VAR_github_app_id: ${{ secrets.GH_APP_ID }}
+          TF_VAR_github_app_installation_id: ${{ secrets.GH_APP_INSTALLATION_ID }}
+          TF_VAR_github_app_pem: ${{ secrets.GH_APP_PEM }}
+          TF_VAR_github_owner: ${{ vars.TF_GITHUB_OWNER || github.repository_owner }}
+        run: terraform apply -lock=true -no-color tfplan
