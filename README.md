@@ -81,6 +81,7 @@ silently replacing their history, and never add tokens, private keys, or credent
 | GitHub authentication | GitHub App | locked | Avoids credentials tied to an individual user |
 | Secret storage | GitHub Actions secrets; apply credentials only in the `production` environment | locked | Keeps write access to `main`-only jobs |
 | Apply policy | `production` environment on `main` with required reviewers | locked | Preserves a human review gate for infrastructure changes |
+| State history | no-versioning | locked | Cloudflare R2 does not implement bucket versioning, so a bad apply cannot be rolled back from the bucket; accepted because this state holds only Cloudflare and GitHub resources |
 
 <!-- infra:decisions end -->
 
