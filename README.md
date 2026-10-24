@@ -55,11 +55,11 @@ state_region: "auto"
 leaf_backends: {}
 state_transfers: {}
 github_apps:
-  plan_app_id: ""
-  apply_app_id: ""
-  reviewed_at: ""
-  plan_manifest_blob: ""
-  apply_manifest_blob: ""
+  plan_app_id: "5453152"
+  apply_app_id: "5453179"
+  reviewed_at: "2026-10-24T09:09:01Z"
+  plan_manifest_blob: "a194f44cce2fade708ae473aebb24361d6f8011a"
+  apply_manifest_blob: "f409d3b196319f73346105c223c93244eb86ff9e"
 additional_providers: []
 # infra:customization end
 ```
