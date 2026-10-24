@@ -1,7 +1,6 @@
 # Infrastructure
 
-Terraform-managed Cloudflare and GitHub infrastructure for `hasansezertasan` (state in s3 object storage, CI in GitHub Actions), generated
-from [copier-infra](https://github.com/hasansezertasan/copier-infra) and designed to be
+Terraform-managed Cloudflare and GitHub infrastructure for `hasansezertasan` (state in s3 object storage, CI in GitHub Actions), designed to be
 maintained with [infra-skills](https://github.com/hasansezertasan/infra-skills).
 
 ## Start here
@@ -75,7 +74,7 @@ silently replacing their history, and never add tokens, private keys, or credent
 
 | Decision | Choice | Status | Rationale |
 |---|---|---|---|
-| Terraform backend | s3 object storage with GitHub Actions CI | locked | State in a private versioned bucket; plans appear in pull requests |
+| Terraform backend | S3-compatible object storage with GitHub Actions CI | locked | State in a private bucket; whether it is versioned depends on the store, so record that in a State history decision; plans appear in pull requests |
 | State boundaries | One state prefix per provider leaf | locked | Limits credentials and blast radius by concern |
 | Toolchain | Exact pins in `mise.toml` and committed `mise.lock` | locked | Keeps local, CI, and Terraform versions aligned |
 | GitHub authentication | GitHub App | locked | Avoids credentials tied to an individual user |
@@ -99,3 +98,7 @@ mise exec -- make check
 `ci.yml` runs credential-free formatting, validation, and contract checks. The plan and
 apply workflows are added by infra-setup; applies run from `main` in the
 `production` environment.
+
+## Credits
+
+Generated from [copier-infra](https://github.com/hasansezertasan/copier-infra).
