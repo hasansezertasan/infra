@@ -60,15 +60,6 @@ github_apps:
   plan_manifest_blob: "a194f44cce2fade708ae473aebb24361d6f8011a"
   apply_manifest_blob: "f409d3b196319f73346105c223c93244eb86ff9e"
 cloudflare_dmarc_report_id: "29284fbc94334d54b7ea006d256b01fb"
-cloudflare_import_ids:
-  dns_apex_cname: "50076abe4e3e37e948820afc1c8c7c7f"
-  dns_www_cname: "cfd76c313a0385f20af376a653324a91"
-  dns_mx_route3: "5810bdd91415862ba25dd54c4eb4b338"
-  dns_mx_route2: "32295d65370a5edf7d06a0ce6e93a573"
-  dns_mx_route1: "8c91e6ce46ad586faba4df5ff7825038"
-  dns_dkim_cf2024_1: "95f1c00669d22af2e703930fce3bb6c8"
-  dns_dmarc: "b458497217624f4ead3e4be904df2417"
-  dns_spf: "703677d0026639b2b94ac088e3c2d146"
 additional_providers: []
 # infra:customization end
 ```
