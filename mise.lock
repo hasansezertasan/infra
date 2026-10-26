@@ -8,15 +8,19 @@ backend = "aqua:aws/aws-cli"
 specifiers = ["2.38.5"]
 
 [tools.awscli."platforms.linux-arm64"]
+checksum = "sha256:07711a936e9d271045ab937d2c2c5390c25f419e4ba9e25adb9e996031e3f6be"
 url = "https://awscli.amazonaws.com/awscli-exe-linux-aarch64-2.38.5.zip"
 
 [tools.awscli."platforms.linux-arm64-musl"]
+checksum = "sha256:07711a936e9d271045ab937d2c2c5390c25f419e4ba9e25adb9e996031e3f6be"
 url = "https://awscli.amazonaws.com/awscli-exe-linux-aarch64-2.38.5.zip"
 
 [tools.awscli."platforms.linux-x64"]
+checksum = "sha256:5def7d1b7e55d892f9a381bb2cb2081a685712464be0d36d5d706af0ac48d0d3"
 url = "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-2.38.5.zip"
 
 [tools.awscli."platforms.linux-x64-musl"]
+checksum = "sha256:5def7d1b7e55d892f9a381bb2cb2081a685712464be0d36d5d706af0ac48d0d3"
 url = "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-2.38.5.zip"
 
 [tools.awscli."platforms.macos-arm64"]
@@ -24,6 +28,7 @@ checksum = "blake3:acd515063717a9fead293b22e8a686527e1e183c3f06a653b2a29d66d273e
 url = "https://awscli.amazonaws.com/AWSCLIV2-2.38.5.pkg"
 
 [tools.awscli."platforms.macos-x64"]
+checksum = "sha256:4cb957d1f79c7264ef5a0f3a509ce477bbfd23c91eee888493a9dfff445a8d7c"
 url = "https://awscli.amazonaws.com/AWSCLIV2-2.38.5.pkg"
 
 [[tools.gh]]
@@ -72,6 +77,53 @@ checksum = "sha256:ae64e556ecc240b200f7eba60d550e4bb60d78e860e69dd88c449405b8606
 url = "https://github.com/cli/cli/releases/download/v2.102.0/gh_2.102.0_windows_amd64.zip"
 url_api = "https://api.github.com/repos/cli/cli/releases/assets/599854760"
 provenance = "github-attestations"
+
+[[tools."github:cloudflare/cf-terraforming"]]
+version = "0.29.0"
+backend = "github:cloudflare/cf-terraforming"
+specifiers = ["0.29.0"]
+
+[tools."github:cloudflare/cf-terraforming"."platforms.linux-arm64"]
+checksum = "sha256:84a7c9af081c2db3393e47375294ca88c3c8ed451b254d5880c2cb6110c0bf46"
+checksum_source = "mise-versions"
+url = "https://github.com/cloudflare/cf-terraforming/releases/download/v0.29.0/cf-terraforming_0.29.0_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/cloudflare/cf-terraforming/releases/assets/541588742"
+
+[tools."github:cloudflare/cf-terraforming"."platforms.linux-arm64-musl"]
+checksum = "sha256:84a7c9af081c2db3393e47375294ca88c3c8ed451b254d5880c2cb6110c0bf46"
+checksum_source = "mise-versions"
+url = "https://github.com/cloudflare/cf-terraforming/releases/download/v0.29.0/cf-terraforming_0.29.0_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/cloudflare/cf-terraforming/releases/assets/541588742"
+
+[tools."github:cloudflare/cf-terraforming"."platforms.linux-x64"]
+checksum = "sha256:bb30308b027dd110d71935357ae7ee9906eb940c11de651a0dff8e2fe222e05c"
+checksum_source = "mise-versions"
+url = "https://github.com/cloudflare/cf-terraforming/releases/download/v0.29.0/cf-terraforming_0.29.0_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/cloudflare/cf-terraforming/releases/assets/541588743"
+
+[tools."github:cloudflare/cf-terraforming"."platforms.linux-x64-musl"]
+checksum = "sha256:bb30308b027dd110d71935357ae7ee9906eb940c11de651a0dff8e2fe222e05c"
+checksum_source = "mise-versions"
+url = "https://github.com/cloudflare/cf-terraforming/releases/download/v0.29.0/cf-terraforming_0.29.0_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/cloudflare/cf-terraforming/releases/assets/541588743"
+
+[tools."github:cloudflare/cf-terraforming"."platforms.macos-arm64"]
+checksum = "sha256:a491f9728b4b1aebb3e6749d81d4f11664066691c6ba035cacc41513e8e669f3"
+checksum_source = "mise-versions"
+url = "https://github.com/cloudflare/cf-terraforming/releases/download/v0.29.0/cf-terraforming_0.29.0_darwin_arm64.tar.gz"
+url_api = "https://api.github.com/repos/cloudflare/cf-terraforming/releases/assets/541588774"
+
+[tools."github:cloudflare/cf-terraforming"."platforms.macos-x64"]
+checksum = "sha256:b7b412e4741de8645ffbda74911257cc5d49993bff53fe7e13b6330def987198"
+checksum_source = "mise-versions"
+url = "https://github.com/cloudflare/cf-terraforming/releases/download/v0.29.0/cf-terraforming_0.29.0_darwin_amd64.tar.gz"
+url_api = "https://api.github.com/repos/cloudflare/cf-terraforming/releases/assets/541588740"
+
+[tools."github:cloudflare/cf-terraforming"."platforms.windows-x64"]
+checksum = "sha256:b120c3464457326e79299fd0afccba2094582e80fb406685ea32fc11ebf29189"
+checksum_source = "mise-versions"
+url = "https://github.com/cloudflare/cf-terraforming/releases/download/v0.29.0/cf-terraforming_0.29.0_windows_amd64.tar.gz"
+url_api = "https://api.github.com/repos/cloudflare/cf-terraforming/releases/assets/541588779"
 
 [[tools.jq]]
 version = "1.8.2"

@@ -4,6 +4,7 @@ gh = "2.102.0"
 jq = "1.8.2"
 # infra-skills:general-tool awscli
 awscli = "2.38.5"
+"github:cloudflare/cf-terraforming" = "0.29.0"
 
 [settings]
 lockfile = true
