@@ -37,8 +37,3 @@ import {
   to = cloudflare_dns_record.dns_spf
   id = "${local.infra_config.cloudflare_zone_id}/${local.infra_config.cloudflare_import_ids.dns_spf}"
 }
-
-import {
-  to = cloudflare_r2_bucket.infra_state
-  id = "${local.infra_config.cloudflare_account_id}/hasansezertasan-infra-state/default"
-}
