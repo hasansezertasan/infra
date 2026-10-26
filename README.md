@@ -83,6 +83,7 @@ silently replacing their history, and never add tokens, private keys, or credent
 | Apply policy | `production` environment on `main` with required reviewers | locked | Preserves a human review gate for infrastructure changes |
 | State history | no-versioning | locked | Cloudflare R2 does not implement bucket versioning, so a bad apply cannot be rolled back from the bucket; accepted because this state holds only Cloudflare and GitHub resources |
 | Destructive apply | allow-destroy | locked | Deletes and replacements require the allow-destroy label on the PR that produced the merged change. It is an intent marker, not authorization: anyone with write access can add it, and it opts into every delete in the refreshed apply plan, including drift |
+| Repository merge settings | Not managed by Terraform | locked | The plan GitHub App is read-only, and GitHub hides the merge settings (squash, auto-merge, update branch, delete branch on merge, commit titles) from a token without write access, so managing them would show a phantom change on every plan; widening the plan credential to see them would break the read-only plan boundary. They stay set by hand in the repository settings |
 
 <!-- infra:decisions end -->
 

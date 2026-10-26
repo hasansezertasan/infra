@@ -1,5 +1,11 @@
 # This repository's own settings. It carries the plan and apply workflows, so a destroy
 # would remove the configuration itself; Terraform may never delete it.
+#
+# Only settings the read-only plan App can read are managed here. GitHub hides the merge
+# settings (allow_*_merge, allow_auto_merge, allow_update_branch, delete_branch_on_merge and
+# the merge commit title and message) from a token without write access, so managing them
+# would make every plan show a change that is not real. See the "Repository merge settings"
+# decision in README.md.
 resource "github_repository" "infra" {
   name        = "infra"
   description = "@hasansezertasan loves IaC"
@@ -10,18 +16,7 @@ resource "github_repository" "infra" {
   has_wiki        = false
   has_discussions = false
 
-  allow_merge_commit     = false
-  allow_rebase_merge     = false
-  allow_squash_merge     = true
-  allow_auto_merge       = true
-  allow_update_branch    = true
-  delete_branch_on_merge = true
-
-  squash_merge_commit_title   = "PR_TITLE"
-  squash_merge_commit_message = "BLANK"
-
   web_commit_signoff_required = false
-  archive_on_destroy          = true
 
   security_and_analysis {
     secret_scanning {
